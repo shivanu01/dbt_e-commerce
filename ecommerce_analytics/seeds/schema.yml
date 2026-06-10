@@ -1,0 +1,21 @@
+version: 2
+
+seeds:
+  - name: country_codes
+    description: ISO country code reference data with region and currency info.
+    columns:
+      - name: country_code
+        tests:
+          - unique
+          - not_null
+
+  - name: tax_rates
+    description: Tax rates by country for revenue calculations.
+    columns:
+      - name: country_code
+        tests:
+          - unique
+          - not_null
+      - name: tax_rate_pct
+        tests:
+          - not_null

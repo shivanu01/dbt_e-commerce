@@ -1,0 +1,27 @@
+version: 2
+
+models:
+
+  - name: int_orders_enriched
+    description: >
+      Enriches each order with payment outcome and item-level aggregates.
+      One row per order. Joins stg_orders + stg_payments + stg_order_items.
+      This is the primary building block for fact_orders.
+
+  - name: int_customer_orders
+    description: >
+      Adds customer order history context to every order using window functions.
+      Calculates is_first_order, customer_order_number, days_since_previous_order,
+      and running_lifetime_value. One row per order.
+
+  - name: int_customer_lifetime
+    description: >
+      One row per customer summarising their complete order history.
+      Includes lifetime value, segment (vip/loyal/potential/new via NTILE),
+      return rate, and review behaviour. Primary input for dim_customers.
+
+  - name: int_payment_rollups
+    description: >
+      Collapses multiple payment attempts per order into one clean row.
+      Uses QUALIFY + ROW_NUMBER to pick the primary payment by status priority.
+      Ensures all mart joins to payments are clean 1:1 joins.

@@ -1,0 +1,175 @@
+version: 2
+
+models:
+
+  # -------------------------------------------------------
+  - name: dim_customers
+    description: >
+      Customer master dimension table. One row per customer.
+      Combines profile data from stg_customers with complete
+      order history from int_customer_lifetime.
+      Rebuilt fully on every dbt run — always reflects current state.
+      Used for customer segmentation, churn analysis, and profiling.
+
+    columns:
+      - name: customer_id
+        description: Primary key. Unique identifier for each customer.
+        tests:
+          - unique
+          - not_null
+
+      - name: full_name
+        description: Customer first and last name concatenated.
+        tests:
+          - not_null
+
+      - name: email
+        description: Lowercased customer email address.
+        tests:
+          - unique
+          - not_null
+
+      - name: customer_segment
+        description: >
+          Relative value segment based on NTILE quartile ranking.
+          vip = top 25% by LTV, loyal = 50-75%, potential = 25-50%, new = bottom 25%.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['vip', 'loyal', 'potential', 'new']
+
+      - name: customer_tier
+        description: >
+          Absolute value tier based on fixed LTV thresholds.
+          gold >= 400, silver >= 200, bronze >= 50, starter > 0, no_purchase = 0.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['gold', 'silver', 'bronze', 'starter', 'no_purchase']
+
+      - name: churn_status
+        description: >
+          Current churn risk status based on days since last order.
+          churned >= 90 days, at_risk >= 60 days, active >= 30 days,
+          highly_active < 30 days, never_ordered = no purchase history.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['churned', 'at_risk', 'active', 'highly_active', 'never_ordered']
+
+      - name: lifetime_value
+        description: Sum of net_revenue across all completed orders. In dollars.
+        tests:
+          - not_null
+
+      - name: days_since_last_order
+        description: >
+          Number of days between most_recent_order_date and today.
+          NULL for customers who have never ordered.
+
+      - name: preferred_payment_method
+        description: Most frequently used successful payment method.
+
+  # -------------------------------------------------------
+  - name: dim_products
+    description: >
+      Product master dimension table. One row per product.
+      Combines product catalogue from stg_products with sales
+      performance from stg_order_items and review signals from stg_reviews.
+      Used for product analysis, merchandising decisions, margin reporting.
+
+    columns:
+      - name: product_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: sku
+        description: Stock keeping unit — unique product code.
+        tests:
+          - unique
+          - not_null
+
+      - name: gross_margin_pct
+        description: >
+          Percentage margin calculated as (retail_price - cost_price) / retail_price * 100.
+          Represents margin on list price before any discounts.
+
+      - name: performance_tier
+        description: >
+          Sales performance classification based on total revenue generated.
+          hero >= 1000, strong >= 500, average >= 100, weak > 0, no_sales = 0.
+        tests:
+          - accepted_values:
+              values: ['hero', 'strong', 'average', 'weak', 'no_sales']
+
+      - name: price_tier
+        description: Absolute price classification. premium >= 100, mid_range >= 50, value >= 20, budget < 20.
+        tests:
+          - accepted_values:
+              values: ['premium', 'mid_range', 'value', 'budget']
+
+  # -------------------------------------------------------
+  - name: fact_orders
+    description: >
+      Central order fact table. One row per order.
+      Materialised as incremental — only new orders processed each run.
+      Joins int_customer_orders + int_payment_rollups + dim_customers.
+      Primary table for all revenue analysis, order trends, and cohort reporting.
+      Analysts should start here for 80% of business questions.
+
+    columns:
+      - name: order_id
+        description: Primary key. Unique identifier for each order.
+        tests:
+          - unique
+          - not_null
+
+      - name: customer_id
+        description: Foreign key to dim_customers.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+
+      - name: order_date
+        description: Date the order was placed.
+        tests:
+          - not_null
+
+      - name: order_status
+        description: Current fulfilment status of the order.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['pending', 'placed', 'shipped', 'delivered', 'returned', 'cancelled']
+
+      - name: net_revenue
+        description: >
+          Revenue after refunds. total_amount_collected - total_refunded.
+          This is the real money earned on this order.
+        tests:
+          - not_null
+
+      - name: is_first_order
+        description: True if this is the customer's first ever order. Derived using ROW_NUMBER() in int_customer_orders.
+        tests:
+          - not_null
+
+      - name: payment_method
+        description: Payment method used for the primary successful payment attempt.
+
+      - name: delivery_speed
+        description: >
+          Classification of how quickly the order was resolved.
+          same_day = 1 day, fast = 2-3 days, standard = 4-7 days, slow = 8+ days.
+        tests:
+          - accepted_values:
+              values: ['same_day', 'fast', 'standard', 'slow']
+
+      - name: dbt_loaded_at
+        description: Timestamp when this row was loaded by dbt. Used as incremental watermark.
+        tests:
+          - not_null

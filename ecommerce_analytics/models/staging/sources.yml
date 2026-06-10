@@ -1,0 +1,44 @@
+version: 2
+
+sources:
+  - name: ecommerce                  # this is the name you use in {{ source() }} calls
+    database: RAW_DB                 # the Snowflake database
+    schema: LANDING                  # the schema inside that database
+    description: >
+      Raw e-commerce data landed from the transactional database.
+      These tables are append-only and never modified after loading.
+
+    # Source freshness — dbt will warn if raw data is older than these thresholds
+    # We'll activate these properly in Module 6. Defined here for completeness.
+    freshness:
+      warn_after:  {count: 24, period: hour}
+      error_after: {count: 48, period: hour}
+
+    tables:
+      - name: RAW_CUSTOMERS
+        description: One row per registered customer. Loaded from transactional DB.
+        loaded_at_field: _loaded_at   # column dbt uses to check freshness
+
+      - name: RAW_ORDERS
+        description: One row per order placed. Status changes are full row replacements.
+        loaded_at_field: _loaded_at
+
+      - name: RAW_ORDER_ITEMS
+        description: One row per line item within an order.
+        loaded_at_field: _loaded_at
+
+      - name: RAW_PRODUCTS
+        description: Product catalogue. One row per product.
+        loaded_at_field: _loaded_at
+
+      - name: RAW_PAYMENTS
+        description: One row per payment attempt. An order can have multiple attempts.
+        loaded_at_field: _loaded_at
+
+      - name: RAW_SESSIONS
+        description: One row per website session. customer_id is null for anonymous sessions.
+        loaded_at_field: _loaded_at
+
+      - name: RAW_REVIEWS
+        description: Product reviews submitted by customers post-purchase.
+        loaded_at_field: _loaded_at

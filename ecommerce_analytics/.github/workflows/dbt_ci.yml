@@ -1,0 +1,73 @@
+# .github/workflows/dbt_ci.yml
+# Place this file at: dbt_e-commerce/.github/workflows/dbt_ci.yml
+
+name: dbt CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  dbt_build:
+    name: Run dbt build
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dbt and dependencies
+        run: |
+          pip install dbt-snowflake
+          pip install fastapi uvicorn
+          pip install snowflake-connector-python requests python-dotenv
+
+      - name: Create profiles.yml
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << EOF
+          ecommerce_analytics:
+            target: dev
+            outputs:
+              dev:
+                type: snowflake
+                account: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+                user: ${{ secrets.SNOWFLAKE_USER }}
+                password: ${{ secrets.SNOWFLAKE_PASSWORD }}
+                role: ${{ secrets.SNOWFLAKE_ROLE }}
+                warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+                database: ${{ secrets.SNOWFLAKE_DATABASE }}
+                schema: ${{ secrets.SNOWFLAKE_SCHEMA }}_CI
+                threads: 4
+          EOF
+
+      # KEY CHANGE — cd into ecommerce_analytics before every dbt command
+      - name: Install dbt packages
+        working-directory: ecommerce_analytics    # ← tells GitHub Actions where to run
+        run: dbt deps
+
+      - name: Load seeds
+        working-directory: ecommerce_analytics
+        run: dbt seed
+
+      - name: Run dbt models
+        working-directory: ecommerce_analytics
+        run: dbt run
+
+      - name: Run dbt tests
+        working-directory: ecommerce_analytics
+        run: dbt test
+
+      - name: Generate docs
+        working-directory: ecommerce_analytics
+        run: dbt docs generate

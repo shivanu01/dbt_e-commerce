@@ -1,0 +1,20 @@
+country_code,country_name,region,sub_region,currency_code,currency_name
+IN,India,Asia,South Asia,INR,Indian Rupee
+US,United States,Americas,North America,USD,US Dollar
+GB,United Kingdom,Europe,Northern Europe,GBP,British Pound
+AE,United Arab Emirates,Asia,Western Asia,AED,UAE Dirham
+MX,Mexico,Americas,Central America,MXN,Mexican Peso
+CN,China,Asia,East Asia,CNY,Chinese Yuan
+NG,Nigeria,Africa,West Africa,NGN,Nigerian Naira
+KR,South Korea,Asia,East Asia,KRW,South Korean Won
+FR,France,Europe,Western Europe,EUR,Euro
+JP,Japan,Asia,East Asia,JPY,Japanese Yen
+EG,Egypt,Africa,North Africa,EGP,Egyptian Pound
+PL,Poland,Europe,Eastern Europe,PLN,Polish Zloty
+BR,Brazil,Americas,South America,BRL,Brazilian Real
+SA,Saudi Arabia,Asia,Western Asia,SAR,Saudi Riyal
+RU,Russia,Europe,Eastern Europe,RUB,Russian Ruble
+SN,Senegal,Africa,West Africa,XOF,West African Franc
+IT,Italy,Europe,Southern Europe,EUR,Euro
+DE,Germany,Europe,Western Europe,EUR,Euro
+GH,Ghana,Africa,West Africa,GHS,Ghanaian Cedi

@@ -1,0 +1,16 @@
+country_code,tax_rate_pct,tax_name,applies_to_digital_goods
+IN,18.0,GST,true
+US,0.0,Sales Tax,false
+GB,20.0,VAT,true
+AE,5.0,VAT,true
+MX,16.0,IVA,true
+CN,13.0,VAT,true
+NG,7.5,VAT,false
+KR,10.0,VAT,true
+FR,20.0,VAT,true
+JP,10.0,Consumption Tax,true
+EG,14.0,VAT,false
+PL,23.0,VAT,true
+BR,12.0,ICMS,false
+SA,15.0,VAT,true
+RU,20.0,VAT,true

@@ -1,0 +1,86 @@
+version: 2
+
+models:
+
+  - name: agg_revenue_daily
+    description: >
+      Pre-aggregated daily revenue. One row per calendar day with orders.
+      Includes running month-to-date totals and 7-day rolling averages.
+      Powers revenue trend charts and daily business review dashboards.
+      Much faster than querying fact_orders directly for time series.
+
+    columns:
+      - name: order_date
+        description: The calendar date. Primary key for this model.
+        tests:
+          - unique
+          - not_null
+
+      - name: net_revenue
+        description: Total net revenue for this day across all completed orders.
+        tests:
+          - not_null
+
+      - name: running_revenue_mtd
+        description: Cumulative net revenue from the start of the month to this date.
+
+  - name: agg_cohort_retention
+    description: >
+      Monthly cohort retention analysis.
+      One row per cohort month + months_since_first_order combination.
+      Shows what percentage of customers from each cohort reorder in subsequent months.
+      Used by product and growth teams to measure retention and identify drop-off points.
+
+    columns:
+      - name: cohort_month
+        description: The month in which customers placed their first ever order.
+        tests:
+          - not_null
+
+      - name: months_since_first_order
+        description: How many months after their first order this row represents. 0 = first month.
+        tests:
+          - not_null
+
+      - name: retention_rate_pct
+        description: Percentage of original cohort who placed an order in this month offset.
+        tests:
+          - not_null
+
+  - name: agg_funnel_conversion
+    description: >
+      Marketing channel funnel analysis. One row per channel.
+      Connects sessions to orders to measure channel quality and ROI.
+      Used by marketing team to allocate budget across channels.
+
+    columns:
+      - name: channel
+        description: Marketing channel name.
+        tests:
+          - unique
+          - not_null
+
+      - name: conversion_rate_pct
+        description: Percentage of sessions that resulted in a completed order.
+
+      - name: revenue_per_session
+        description: Total revenue divided by total sessions. Key efficiency metric.
+
+  - name: agg_customer_ltv
+    description: >
+      Customer lifetime value distribution by segment and country.
+      One row per customer_segment + customer_tier + country_code combination.
+      Shows revenue concentration and churn rates across customer groups.
+      Used by leadership for strategic customer investment decisions.
+
+    columns:
+      - name: customer_segment
+        description: Customer value segment — vip, loyal, potential, or new.
+        tests:
+          - not_null
+
+      - name: total_ltv
+        description: Sum of lifetime_value across all customers in this group.
+
+      - name: churn_rate_pct
+        description: Percentage of customers in this group who are currently churning.

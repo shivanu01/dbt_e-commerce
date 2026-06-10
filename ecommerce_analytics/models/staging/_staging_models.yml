@@ -1,0 +1,258 @@
+version: 2
+
+models:
+
+  # -------------------------------------------------------
+  - name: stg_customer
+    description: >
+      One row per customer. Cleaned and renamed from RAW_CUSTOMERS.
+      Types cast, empty strings nullified, account status standardised.
+    columns:
+      - name: customer_id
+        description: Primary key — unique identifier for each customer.
+        tests:
+          - unique
+          - not_null
+
+      - name: email
+        description: Lowercased customer email address.
+        tests:
+          - unique
+          - not_null
+
+      - name: account_status
+        description: Current account status.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['active', 'churned', 'suspended']
+
+      - name: signup_date
+        description: Date the customer created their account.
+        tests:
+          - not_null
+
+      - name: country_code
+        description: ISO 2-letter country code.
+        tests:
+          - not_null
+
+  # -------------------------------------------------------
+  - name: stg_orders
+    description: >
+      One row per order. Financial amounts converted from cents to dollars.
+      Status standardised to lowercase. Voided and returned flags derived.
+    columns:
+      - name: order_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: customer_id
+        description: Foreign key to stg_customers.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+      - name: order_status
+        description: Current fulfillment status of the order.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['pending', 'placed', 'shipped', 'delivered', 'returned', 'cancelled']
+
+      - name: order_total
+        description: Total order value in dollars including tax, after discounts.
+        tests:
+          - not_null
+
+      - name: order_date
+        description: Date the order was placed.
+        tests:
+          - not_null
+
+  # -------------------------------------------------------
+  - name: stg_order_items
+    description: >
+      One row per line item within an order. Line total calculated as
+      (unit_price * quantity) - discount.
+    columns:
+      - name: order_item_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: order_id
+        description: Foreign key to stg_orders.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: product_id
+        description: Foreign key to stg_products.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
+
+      - name: quantity
+        description: Number of units ordered.
+        tests:
+          - not_null
+
+      - name: unit_price
+        description: Price per unit in dollars at time of order.
+        tests:
+          - not_null
+
+  # -------------------------------------------------------
+  - name: stg_products
+    description: >
+      One row per product. Pricing converted from cents to dollars.
+      Gross margin percentage derived. is_active cast from string to boolean.
+    columns:
+      - name: product_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: sku
+        description: Unique stock keeping unit code.
+        tests:
+          - unique
+          - not_null
+
+      - name: retail_price
+        description: Selling price in dollars.
+        tests:
+          - not_null
+
+      - name: category
+        description: Top-level product category.
+        tests:
+          - not_null
+
+      - name: is_active
+        description: Whether the product is currently listed for sale.
+        tests:
+          - not_null
+
+  # -------------------------------------------------------
+  - name: stg_payments
+    description: >
+      One row per payment attempt. A single order can have multiple payment
+      rows — e.g. a failed credit card followed by a successful UPI payment.
+      Amount converted from cents to dollars.
+    columns:
+      - name: payment_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: order_id
+        description: Foreign key to stg_orders.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: payment_method
+        description: Method used for this payment attempt.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['credit_card', 'paypal', 'upi', 'bank_transfer']
+
+      - name: payment_status
+        description: Outcome of this payment attempt.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['pending', 'success', 'failed', 'refunded']
+
+      - name: payment_amount
+        description: Amount charged in dollars. Zero for failed attempts.
+        tests:
+          - not_null
+
+  # -------------------------------------------------------
+  - name: stg_sessions
+    description: >
+      One row per website session. customer_id is null for anonymous
+      (pre-login) sessions. did_convert is true if the session resulted
+      in an order being placed.
+    columns:
+      - name: session_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: channel
+        description: Marketing channel that drove this session.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['organic', 'paid_search', 'email', 'social', 'direct']
+
+      - name: device_type
+        description: Device category used for the session.
+        tests:
+          - not_null
+
+      - name: did_convert
+        description: True if the session resulted in a placed order.
+        tests:
+          - not_null
+
+  # -------------------------------------------------------
+  - name: stg_reviews
+    description: >
+      One row per product review. Sentiment bucket derived from rating.
+      review_text nullified if empty string.
+    columns:
+      - name: review_id
+        description: Primary key.
+        tests:
+          - unique
+          - not_null
+
+      - name: product_id
+        description: Foreign key to stg_products.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
+
+      - name: customer_id
+        description: Foreign key to stg_customers.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+      - name: rating
+        description: Star rating from 1 to 5.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+      - name: sentiment
+        description: Derived sentiment bucket from rating.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['positive', 'neutral', 'negative']

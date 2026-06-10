@@ -1,0 +1,51 @@
+# dbt_project.yml — updated with hooks and macro references
+
+name: ecommerce_analytics
+version: '1.0.0'
+config-version: 2
+
+profile: ecommerce_analytics
+
+model-paths:      ["models"]
+seed-paths:       ["seeds"]
+snapshot-paths:   ["snapshots"]
+macro-paths:      ["macros"]
+test-paths:       ["tests"]
+
+target-path:      "target"
+clean-targets:    ["target", "dbt_packages"]
+
+models:
+  ecommerce_analytics:
+
+    staging:
+      +schema:        staging
+      +materialized:  view
+      # After each staging model runs → grant analysts read access
+      
+
+    intermediate:
+      +schema:        intermediate
+      +materialized:  ephemeral
+
+    marts:
+      +schema:        marts
+      +materialized:  table
+      # After each mart model runs → grant analysts read access
+      
+
+      core:
+        +materialized: table
+
+      reporting:
+        +materialized: table
+
+seeds:
+  ecommerce_analytics:
+    +schema: seeds
+    # Grant analysts access to seed tables too
+    
+
+snapshots:
+  ecommerce_analytics:
+    +target_schema: snapshots
