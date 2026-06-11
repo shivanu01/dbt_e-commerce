@@ -256,3 +256,38 @@ models:
           - not_null
           - accepted_values:
               values: ['positive', 'neutral', 'negative']
+  
+
+  - name: stg_marketing_events
+    description: >
+      One row per marketing event from the API ingestion pipeline.
+      Deduplicates on event_id, casts timestamps, flattens properties VARIANT.
+      event_category derived from event_type for funnel analysis.
+
+    columns:
+      - name: event_id
+        description: Primary key — unique event identifier from API.
+        tests:
+          - unique
+          - not_null
+
+      - name: event_type
+        description: Type of event fired.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['page_view','add_to_cart','checkout_started',
+                       'purchase','email_open','email_click',
+                       'wishlist_add','search']
+
+      - name: occurred_at
+        description: Timestamp when the event occurred.
+        tests:
+          - not_null
+
+      - name: event_category
+        description: Funnel stage — awareness, consideration, intent, conversion, retention.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['awareness','consideration','intent','conversion','retention','other']

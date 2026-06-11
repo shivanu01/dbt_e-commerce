@@ -134,6 +134,13 @@ def bulk_insert(conn, events: list, batch_id: str, cursor_token: str):
         quote_identifiers=False,
         overwrite=False
     )
+    
+    conn.cursor().execute("""
+    UPDATE RAW_DB.LANDING.RAW_MARKETING_EVENTS
+    SET properties = PARSE_JSON(properties)
+    WHERE _batch_id = %s""", (batch_id,))
+    conn.commit()
+
     log.info("Inserted %d rows in %d chunks (batch %s)", nrows, nchunks, batch_id)
 
 
