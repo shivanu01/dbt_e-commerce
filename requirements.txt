@@ -1,2 +1,7 @@
 fastapi
 uvicorn
+dotenv
+snowflake-connector-python 
+requests
+pandas
+snowflake-connector-python[pandas]

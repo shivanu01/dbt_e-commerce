@@ -42,3 +42,11 @@ sources:
       - name: RAW_REVIEWS
         description: Product reviews submitted by customers post-purchase.
         loaded_at_field: _loaded_at
+
+      - name: RAW_MARKETING_EVENTS
+        description: Marketing events from API ingestion. One row per event.
+        config:
+          loaded_at_field: _fetched_at
+        freshness:
+          warn_after:  {count: 6,  period: hour}
+          error_after: {count: 24, period: hour}
